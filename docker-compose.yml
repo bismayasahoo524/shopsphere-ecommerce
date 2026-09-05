@@ -1,0 +1,60 @@
+services:
+
+  user-service:
+    build:
+      context: ./user-service
+    container_name: shopsphere-user-service
+    ports:
+      - "8001:8000"
+
+  product-service:
+    build:
+      context: ./product-service
+    container_name: shopsphere-product-service
+    ports:
+      - "8002:8000"
+
+  cart-service:
+    build:
+      context: ./cart-service
+    container_name: shopsphere-cart-service
+    ports:
+      - "8003:8000"
+
+  order-service:
+    build:
+      context: ./order-service
+    container_name: shopsphere-order-service
+    ports:
+      - "8004:8000"
+
+  payment-service:
+    build:
+      context: ./payment-service
+    container_name: shopsphere-payment-service
+    ports:
+      - "8005:8000"
+
+  notification-service:
+    build:
+      context: ./notification-service
+    container_name: shopsphere-notification-service
+    ports:
+      - "8006:8000"
+
+  sonarqube:
+    image: sonarqube:community
+    container_name: shopsphere-sonarqube
+    ports:
+      - "9000:9000"
+    environment:
+      SONAR_ES_BOOTSTRAP_CHECKS_DISABLE: "true"
+    volumes:
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_extensions:/opt/sonarqube/extensions
+      - sonarqube_logs:/opt/sonarqube/logs
+
+volumes:
+  sonarqube_data:
+  sonarqube_extensions:
+  sonarqube_logs:
