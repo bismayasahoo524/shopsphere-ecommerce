@@ -4,18 +4,19 @@ pipeline {
 
     environment {
         PYTHON = 'C:\\Users\\rudra\\AppData\\Local\\Python\\bin\\python.exe'
+        DOCKER = 'C:\\Users\\rudra\\AppData\\Local\\Programs\\DockerDesktop\\resources\\bin\\docker.exe'
     }
 
     stages {
 
         stage('Check Environment') {
             steps {
-                echo 'Checking Python and Docker...'
+                echo 'Checking Python, pip and Docker...'
 
                 bat '''
                     "%PYTHON%" --version
                     "%PYTHON%" -m pip --version
-                    docker --version
+                    "%DOCKER%" --version
                 '''
             }
         }
@@ -49,17 +50,17 @@ pipeline {
 
                 bat '''
                     cd product-service
-                    docker build -t shopsphere-product-service:%BUILD_NUMBER% .
+                    "%DOCKER%" build -t shopsphere-product-service:%BUILD_NUMBER% .
                 '''
             }
         }
 
         stage('Run Docker Container') {
             steps {
-                echo 'Starting Docker container...'
+                echo 'Starting Product Service Docker container...'
 
                 bat '''
-                    docker run -d ^
+                    "%DOCKER%" run -d ^
                         --name shopsphere-product-test-%BUILD_NUMBER% ^
                         -p 8002:8000 ^
                         shopsphere-product-service:%BUILD_NUMBER%
@@ -69,7 +70,7 @@ pipeline {
 
         stage('Test Docker Container') {
             steps {
-                echo 'Testing Docker container...'
+                echo 'Testing Product Service Docker container...'
 
                 bat '''
                     timeout /t 10 /nobreak
@@ -80,11 +81,11 @@ pipeline {
 
         stage('Docker Cleanup') {
             steps {
-                echo 'Stopping and removing test container...'
+                echo 'Stopping and removing Docker test container...'
 
                 bat '''
-                    docker stop shopsphere-product-test-%BUILD_NUMBER%
-                    docker rm shopsphere-product-test-%BUILD_NUMBER%
+                    "%DOCKER%" stop shopsphere-product-test-%BUILD_NUMBER%
+                    "%DOCKER%" rm shopsphere-product-test-%BUILD_NUMBER%
                 '''
             }
         }
@@ -95,14 +96,16 @@ pipeline {
         success {
             echo '========================================='
             echo ' Docker Pipeline SUCCESS'
-            echo ' Docker image built and tested successfully'
+            echo ' Python tests passed'
+            echo ' Docker image built'
+            echo ' Docker container tested'
             echo '========================================='
         }
 
         failure {
             echo '========================================='
             echo ' Docker Pipeline FAILED'
-            echo ' Check the Jenkins console output'
+            echo ' Check the Jenkins Console Output'
             echo '========================================='
         }
 
