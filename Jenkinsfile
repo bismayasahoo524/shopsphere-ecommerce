@@ -2,12 +2,21 @@ pipeline {
 
     agent any
 
+    environment {
+        PYTHON = 'C:\\Users\\rudra\\AppData\\Local\\Python\\bin\\python.exe'
+    }
+
     stages {
 
-        stage('Checkout') {
+        stage('Check Environment') {
             steps {
-                echo 'Checking out ShopSphere source code...'
-                checkout scm
+                echo 'Checking Python and Docker...'
+
+                bat '''
+                    "%PYTHON%" --version
+                    "%PYTHON%" -m pip --version
+                    docker --version
+                '''
             }
         }
 
@@ -17,8 +26,8 @@ pipeline {
 
                 bat '''
                     cd product-service
-                    python -m pip install --upgrade pip
-                    python -m pip install -r requirements.txt
+                    "%PYTHON%" -m pip install --upgrade pip
+                    "%PYTHON%" -m pip install -r requirements.txt
                 '''
             }
         }
@@ -29,7 +38,7 @@ pipeline {
 
                 bat '''
                     cd product-service
-                    python -m pytest -v
+                    "%PYTHON%" -m pytest -v
                 '''
             }
         }
@@ -64,7 +73,6 @@ pipeline {
 
                 bat '''
                     timeout /t 10 /nobreak
-
                     curl --fail http://localhost:8002/
                 '''
             }
