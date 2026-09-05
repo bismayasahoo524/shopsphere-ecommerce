@@ -3,7 +3,7 @@ from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 
-DATABASE_URL = "postgresql://postgres:rudra1978@localhost:5432/shopsphere_order_db"
+DATABASE_URL = "postgresql://postgres:rudra1978@host.docker.internal:5432/shopsphere_order_db"
 
 
 engine = create_engine(DATABASE_URL)
