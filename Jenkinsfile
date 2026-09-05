@@ -62,17 +62,16 @@ pipeline {
         }
 
         stage('SonarQube Analysis') {
-            steps {
-                echo 'Running SonarQube analysis...'
+    steps {
+        echo 'Running SonarQube analysis...'
 
-                withSonarQubeEnv('SonarQube') {
-                    bat '''
-                        sonar-scanner
-                    '''
-                }
-            }
+        withSonarQubeEnv('SonarQube') {
+            bat '''
+                sonar-scanner.bat
+            '''
         }
     }
+}
 
     post {
 
