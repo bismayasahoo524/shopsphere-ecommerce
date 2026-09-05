@@ -73,19 +73,11 @@ pipeline {
                 echo 'Testing Product Service Docker container...'
 
                 bat '''
-                    timeout /t 10 /nobreak
-                    curl --fail http://localhost:8002/
-                '''
-            }
-        }
+                    powershell -NoProfile -Command "Start-Sleep -Seconds 10"
 
-        stage('Docker Cleanup') {
-            steps {
-                echo 'Stopping and removing Docker test container...'
+                    "%DOCKER%" ps
 
-                bat '''
-                    "%DOCKER%" stop shopsphere-product-test-%BUILD_NUMBER%
-                    "%DOCKER%" rm shopsphere-product-test-%BUILD_NUMBER%
+                    curl.exe --fail http://localhost:8002/
                 '''
             }
         }
@@ -93,12 +85,22 @@ pipeline {
 
     post {
 
+        always {
+            echo 'Cleaning up Docker test container...'
+
+            bat '''
+                "%DOCKER%" stop shopsphere-product-test-%BUILD_NUMBER% 2>NUL || exit /b 0
+                "%DOCKER%" rm shopsphere-product-test-%BUILD_NUMBER% 2>NUL || exit /b 0
+            '''
+        }
+
         success {
             echo '========================================='
             echo ' Docker Pipeline SUCCESS'
             echo ' Python tests passed'
             echo ' Docker image built'
             echo ' Docker container tested'
+            echo ' Docker container cleaned'
             echo '========================================='
         }
 
@@ -107,10 +109,6 @@ pipeline {
             echo ' Docker Pipeline FAILED'
             echo ' Check the Jenkins Console Output'
             echo '========================================='
-        }
-
-        always {
-            echo 'Docker pipeline execution completed.'
         }
     }
 }
