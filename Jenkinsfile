@@ -7,7 +7,6 @@ pipeline {
         stage('Checkout') {
             steps {
                 echo 'Checking out ShopSphere source code...'
-
                 checkout scm
             }
         }
@@ -18,67 +17,67 @@ pipeline {
 
                 bat '''
                     cd product-service
-
-                    echo Checking Python version...
-                    "C:\\Users\\rudra\\AppData\\Local\\Python\\bin\\python.exe" --version
-
-                    echo Checking pip version...
-                    "C:\\Users\\rudra\\AppData\\Local\\Python\\bin\\python.exe" -m pip --version
-
-                    echo Upgrading pip...
-                    "C:\\Users\\rudra\\AppData\\Local\\Python\\bin\\python.exe" -m pip install --upgrade pip
-
-                    echo Installing requirements...
-                    "C:\\Users\\rudra\\AppData\\Local\\Python\\bin\\python.exe" -m pip install -r requirements.txt
-
-                    echo Installing testing tools...
-                    "C:\\Users\\rudra\\AppData\\Local\\Python\\bin\\python.exe" -m pip install pytest pytest-cov
+                    python -m pip install --upgrade pip
+                    python -m pip install -r requirements.txt
                 '''
             }
         }
 
-        stage('Run Tests') {
+        stage('Run Python Tests') {
             steps {
                 echo 'Running Product Service tests...'
 
                 bat '''
                     cd product-service
-
-                    "C:\\Users\\rudra\\AppData\\Local\\Python\\bin\\python.exe" -m pytest -v
+                    python -m pytest -v
                 '''
             }
         }
 
-        stage('Code Coverage') {
+        stage('Build Docker Image') {
             steps {
-                echo 'Generating code coverage report...'
+                echo 'Building Product Service Docker image...'
 
                 bat '''
                     cd product-service
-
-                    "C:\\Users\\rudra\\AppData\\Local\\Python\\bin\\python.exe" -m pytest --cov=app --cov-report=term-missing --cov-report=xml:coverage.xml
+                    docker build -t shopsphere-product-service:%BUILD_NUMBER% .
                 '''
             }
         }
 
-        stage('SonarQube Analysis') {
+        stage('Run Docker Container') {
             steps {
-                echo 'Running SonarQube analysis...'
+                echo 'Starting Docker container...'
 
-                script {
-                    def scannerHome = tool 'SonarScanner'
+                bat '''
+                    docker run -d ^
+                        --name shopsphere-product-test-%BUILD_NUMBER% ^
+                        -p 8002:8000 ^
+                        shopsphere-product-service:%BUILD_NUMBER%
+                '''
+            }
+        }
 
-                    withCredentials([
-                        string(
-                            credentialsId: 'sonarqube-token',
-                            variable: 'SONAR_TOKEN'
-                        )
-                    ]) {
-                        withSonarQubeEnv('SonarQube') {
-                            bat "\"${scannerHome}\\bin\\sonar-scanner.bat\" -Dsonar.token=%SONAR_TOKEN%"
-                        }
-                    }
-                }
+        stage('Test Docker Container') {
+            steps {
+                echo 'Testing Docker container...'
+
+                bat '''
+                    timeout /t 10 /nobreak
+
+                    curl --fail http://localhost:8002/
+                '''
+            }
+        }
+
+        stage('Docker Cleanup') {
+            steps {
+                echo 'Stopping and removing test container...'
+
+                bat '''
+                    docker stop shopsphere-product-test-%BUILD_NUMBER%
+                    docker rm shopsphere-product-test-%BUILD_NUMBER%
+                '''
             }
         }
     }
@@ -86,20 +85,21 @@ pipeline {
     post {
 
         success {
-            echo '========================================'
-            echo 'ShopSphere CI Pipeline PASSED!'
-            echo '========================================'
+            echo '========================================='
+            echo ' Docker Pipeline SUCCESS'
+            echo ' Docker image built and tested successfully'
+            echo '========================================='
         }
 
         failure {
-            echo '========================================'
-            echo 'ShopSphere CI Pipeline FAILED!'
-            echo 'Check the Console Output for details.'
-            echo '========================================'
+            echo '========================================='
+            echo ' Docker Pipeline FAILED'
+            echo ' Check the Jenkins console output'
+            echo '========================================='
         }
 
         always {
-            echo 'ShopSphere CI Pipeline execution completed.'
+            echo 'Docker pipeline execution completed.'
         }
     }
 }
