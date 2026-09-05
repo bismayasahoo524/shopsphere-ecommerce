@@ -56,8 +56,20 @@ pipeline {
                 bat '''
                     cd product-service
 
-                    "C:\\Users\\rudra\\AppData\\Local\\Python\\bin\\python.exe" -m pytest --cov=app --cov-report=term-missing
+                    "C:\\Users\\rudra\\AppData\\Local\\Python\\bin\\python.exe" -m pytest --cov=app --cov-report=term-missing --cov-report=xml:coverage.xml
                 '''
+            }
+        }
+
+        stage('SonarQube Analysis') {
+            steps {
+                echo 'Running SonarQube analysis...'
+
+                withSonarQubeEnv('SonarQube') {
+                    bat '''
+                        sonar-scanner
+                    '''
+                }
             }
         }
     }
